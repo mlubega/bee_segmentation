@@ -36,13 +36,15 @@ addition = { 70:['Bee', 'Bee'],
 subtraction = {-65: ['Bee', 'Abdomen'],
                35: ['Bee', 'Background'],
                65: ['Abdomen', 'Bee'],
-               100: ['Abdomen', 'Bee'],
+               100: ['Abdomen', 'Background'],
                -35: ['Background', 'Bee'],
                -100: ['Background', 'Abdomen']}
 
 NUM_CLASSES = 3
 
-conf_matrix = np.zeros((NUM_CLASSES, NUM_CLASSES)) 
+conf_matrices = []
+
+
 
 gt_paths = glob.glob(os.path.join(gt_path , "*.png"))
 unet_paths = glob.glob(os.path.join(unet_path, "*.png"))
@@ -61,21 +63,37 @@ for gt_path, unet_path in paired_masks:
 
     gt_img = cv2.imread(gt_path) #, cv2.IMREAD_GRAYSCALE)
     unet_img = cv2.imread(unet_path) #, cv2.IMREAD_GRAYSCALE)
-
+    
+    conf_matrix = np.zeros((NUM_CLASSES, NUM_CLASSES)) 
 
     gt = gt_img.astype(int)
     unet = unet_img.astype(int)
     
     added = gt + unet
-    
     subtracted = gt - unet
-    #print(np.unique(gt_img))
-    #print(np.unique(unet_img))
-    print(np.unique(added, return_counts=True))
-    print(np.unique(subtracted, return_counts=True))
+    
+    a_vals, a_counts = np.unique(added, return_counts=True)
+    s_vals, s_counts = np.unique(subtracted, return_counts=True)
     
     
-    break
+    for k, v in addition.items():
+        row, col = v
+        idx = list(a_vals).index(k)
+        count = a_counts[idx]
+        conf_matrix[classes[row], classes[col]] += count
+        
+    for k, v in subtraction.items():
+        row, col = v
+        idx = list(s_vals).index(k)
+        count = s_counts[idx]
+        conf_matrix[classes[row], classes[col]] += count
+        
+    print(os.path.basename(gt_path))
+    print(conf_matrix)
+        
+    conf_matrices.append(conf_matrix)
+    
+        
 
     #plt.imshow(gt_img)
     #plt.show
