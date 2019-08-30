@@ -6,27 +6,18 @@ Created on Sat Aug 17 13:54:19 2019
 @author: aries
 """
 
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-import sys
 import os
 import logging
 import json
 import cv2 
-
+import argparse 
 import numpy as np
-from matplotlib.patches import Circle, Wedge, Polygon
-from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 
-data_file = "/home/aries/ds_course/term3/bee_export.json"
-mask_dest_file = "/home/aries/ds_course/term3/bee_data/masks_20_binary/"
 IMG_DIM = 1025
 
-
-
-CLASS_COLORS = { "bee": (130, 232, 232), "bee abdomen": (129, 27, 27) }
-
+#CLASS_COLORS = { "bee": (130, 232, 232), "bee abdomen": (129, 27, 27) } #rgb
+CLASS_COLORS = { "bee": 35, "bee abdomen": 100 } # grayscale
 def setLogger():
     
     logger = logging.getLogger('CreateMasks')
@@ -43,7 +34,11 @@ def setLogger():
     return logger
 
 
-def main():
+
+
+def main(data_file, mask_dest_file):
+    
+
 
     try:
         logger = setLogger()
@@ -59,7 +54,8 @@ def main():
                 logger.debug("Processsing %s", filename)
                 
                 #create black image on which to draw regions
-                mask = np.zeros((IMG_DIM,IMG_DIM), np.uint8)
+                mask = np.zeros((IMG_DIM,IMG_DIM), np.uint8) 
+
                 
                 # iteratively add shapes
                 regions = img["regions"]
@@ -68,8 +64,8 @@ def main():
                 for region in regions:
                     shape = region["shape_attributes"]["name"]
                     bee_type = region["region_attributes"]["class"]
-                    #color = CLASS_COLORS[bee_type]
-                    color = 255
+                    color = CLASS_COLORS[bee_type]
+                    
                     
                     #drawing functions
                     if shape == "circle":
@@ -103,10 +99,16 @@ def main():
                     else:
                         print(shape)
                         raise TypeError(shape, "is not supported")
-                    
+                
+                
+                #cv2.imshow('Mask',mask)
+                #cv2.waitKey(0)
+                #cv2.destroyAllWindows()
+                
                 plt.imshow(mask)
                 plt.show()
-                cv2.imwrite(os.path.join(mask_dest_file, filename), mask)
+                
+                #cv2.imwrite(os.path.join(mask_dest_file, filename), mask)
                         
                 
                 
@@ -114,6 +116,12 @@ def main():
             
     finally:
         logger.handlers = []
-        
-main()
+      
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--json", required=True,  help="path to VIA's JSON file", type=str)
+    parser.add_argument("--dst_folder", required=True,  help="path to destination folder", type=str)
+    args = parser.parse_args()
+
+    main(args.json, args.dst_folder)
     
